@@ -11,34 +11,37 @@
 # It parses the commit messages from Gerrit and looks for a Redmine issue in the style
 # of "#1028".
 #
-# It then adds a informative message to the Redmine issue about the review URL and other
+# It then adds an informative message to the Redmine issue about the review URL and other
 # data. It can also change the status of the issue to indicate that this issue is now
 # under gerrit review.
 #
 # Script is tested with Redmine 2.4.1 and Gerrit 2.6.1
 
 # set your API key here. You can find it under "My account" in Redmine, i.e. http://redmine.mydomain.com/my/account
-REDMINE_API_KEY = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+REDMINE_API_KEY = ""
 
 # the hostname or ip number of redmine, do not include the port number here.
-REDMINE_HOST = "redmine.mydomain.com"
+REDMINE_HOST = ""
 
-# The port number on which redmine is listening, change this to 443 if the
-# redmine host is using a secure connection 
-REDMINE_HOST_PORT_NUMBER = 80
+# The host of gerrit
+GERRIT_HOST = ""
 
-# Set this to true if the redmine host is using a secure connection (SSL)
-REDMINE_HOST_USING_SSL = False
+# The port number on which Redmine is listening, change this to 443 if the
+# Redmine host is using a secure connection
+REDMINE_HOST_PORT_NUMBER = 443
 
-# if you want the script to update the status of the issue in redmine
+# Set this to true if the Redmine host is using a secure connection (SSL)
+REDMINE_HOST_USING_SSL = True
+
+# if you want the script to update the status of the issue in Redmine
 # you'll need to set this to the id number of that status. otherwise set
 # it to None and it won't update the status
 
-# the regex we use for findig the issue id
+# the regex we use for finding the issue id
 REDMINE_ISSUE_ID_REGEX = '\#(\d+)'
 
 # which projects to run the script for
-GERRIT_PROJECTS = ["PROJECT_NAME"]
+GERRIT_PROJECTS = ["Test_Project"]
 
 import optparse
 from subprocess import check_output # TODO: you'll need python 2.7 for this
@@ -50,15 +53,18 @@ import json
 if __name__ == '__main__':
     parser = optparse.OptionParser()
     parser.add_option('-c', '--change', dest='changeid')
+    parser.add_option('-k', '--kind', dest='kind')
     parser.add_option('-u', '--change-url', dest='changeurl')
+    parser.add_option('-O', '--change-owner', dest='changeowner')
+    parser.add_option('-U', '--change-owner-username', dest='changeownerusername')
     parser.add_option('-p', '--project', dest='project')
     parser.add_option('-b', '--branch', dest='branch')
+    parser.add_option('-t', '--topic', dest='topic')
     parser.add_option('-s', '--uploader', dest='uploader')
+    parser.add_option('-S', '--uploader-username', dest='uploaderusername')
     parser.add_option('-o', '--commit', dest='commit')
     parser.add_option('-a', '--patchset', dest='patchset')
     parser.add_option('-d', '--is-draft', dest='isdraft')
-    parser.add_option('-t', '--topic', dest='topic')
-
     (options, x) = parser.parse_args(sys.argv)
 
     if options.project not in GERRIT_PROJECTS:
@@ -86,6 +92,7 @@ if __name__ == '__main__':
 
     regex = re.compile(REDMINE_ISSUE_ID_REGEX, re.IGNORECASE)
     mgi = regex.finditer(commitmsg)
+    completeUrl = GERRIT_HOST + "/c/" + options.project + "/+/" + options.changeurl
     for mg in mgi:
        redmineid = int(mg.group(1))
        if not redmineid or redmineid == 0:
@@ -98,7 +105,8 @@ if __name__ == '__main__':
            redminecomment = "Gerrit received a related patchset '%s' for Issue #%d.\n" % (options.patchset, redmineid)
        redminecomment += "Uploader: %s\n" % options.uploader
        redminecomment += "Change-Id: %s\n" % options.changeid
-       redminecomment += "Gerrit URL: %s\n" % options.changeurl
+       redminecomment += "Change-Owner-Username: %s\n" % options.changeownerusername
+       redminecomment += "Gerrit URL: %s\n" % completeUrl
 
        jsonstruct = {"issue":{}}
        jsonstruct["issue"]["notes"] = redminecomment
