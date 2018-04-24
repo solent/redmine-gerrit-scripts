@@ -10,7 +10,7 @@ It then adds a informative message to the Redmine issue about the review URL and
 data. It can also change the status of the issue to indicate that this issue is now
 under gerrit review.
 
-Script is tested with Redmine 2.4.1 and Gerrit 2.6.1
+Script is tested with Redmine 3.4.2.stable and Gerrit 2.15.1
 
 # Installation
 
